@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+.env
+.env.local
+.pgdata/
+*.log
+coverage/
+.DS_Store
+node_modules
+node_modules/
+
+.next/
+.vite/
+dist/

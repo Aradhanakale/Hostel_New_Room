@@ -1,0 +1,24 @@
+{
+  "name": "hostel-room-exchange-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hostel Room Exchange & Multi-Party Swap Platform",
+  "workspaces": [
+    "backend",
+    "react-app",
+    "next-app"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:react": "npm run dev --workspace=react-app",
+    "dev:next": "npm run dev --workspace=next-app",
+    "dev": "concurrently -n API,REACT,NEXT -c blue,cyan,magenta \"npm run dev:backend\" \"npm run dev:react\" \"npm run dev:next\"",
+    "db:push": "npm run db:push --workspace=backend",
+    "seed": "npm run seed --workspace=backend",
+    "test:backend": "npm run test --workspace=backend",
+    "build": "npm run build --workspace=backend && npm run build --workspace=react-app && npm run build --workspace=next-app"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

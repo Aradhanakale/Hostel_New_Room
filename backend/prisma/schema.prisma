@@ -1,0 +1,351 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  WARDEN
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  COED
+}
+
+enum RoomType {
+  AC
+  NON_AC
+}
+
+enum DesiredRoomType {
+  AC
+  NON_AC
+  ANY
+}
+
+enum RoomStatus {
+  AVAILABLE
+  FULL
+  MAINTENANCE
+}
+
+enum ExchangeStatus {
+  PENDING
+  IN_CYCLE
+  AWAITING_WARDEN
+  APPROVED
+  COMPLETED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum SwapType {
+  DIRECT
+  CHAIN
+}
+
+enum SwapGroupStatus {
+  PROPOSED
+  AWAITING_ACCEPTANCE
+  AWAITING_WARDEN
+  APPROVED
+  COMPLETED
+  DISSOLVED
+  REJECTED
+}
+
+enum ParticipantDecision {
+  PENDING
+  ACCEPTED
+  REJECTED
+  TIMED_OUT
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  MATCH_FOUND
+  ACCEPT_REQUIRED
+  CYCLE_DISSOLVED
+  WARDEN_APPROVED
+  WARDEN_REJECTED
+  SWAP_COMPLETED
+  REQUEST_EXPIRED
+  SYSTEM
+}
+
+model Hostel {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  gender      Gender
+  address     String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  blocks          Block[]
+  rooms           Room[]
+  policies        Policy[]
+  desiredRequests ExchangeRequest[] @relation("DesiredHostel")
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  hostelId  String
+  name      String
+  code      String
+  floors    Int      @default(4)
+  gender    Gender
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hostel          Hostel            @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  rooms           Room[]
+  desiredRequests ExchangeRequest[] @relation("DesiredBlock")
+
+  @@unique([hostelId, code])
+}
+
+model Room {
+  id         String     @id @default(cuid())
+  hostelId   String
+  blockId    String
+  roomNumber String
+  floor      Int
+  bedCount   Int
+  type       RoomType
+  gender     Gender
+  capacity   Int
+  status     RoomStatus @default(AVAILABLE)
+  version    Int        @default(1)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  hostel                Hostel            @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  block                 Block             @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  beds                  Bed[]
+  currentRequests       ExchangeRequest[] @relation("CurrentRoom")
+  desiredRequests       ExchangeRequest[] @relation("DesiredRoom")
+  fromSwapParticipants  SwapParticipant[] @relation("FromRoom")
+  toSwapParticipants    SwapParticipant[] @relation("ToRoom")
+
+  @@unique([blockId, roomNumber])
+  @@index([hostelId, type, bedCount])
+}
+
+model Bed {
+  id         String    @id @default(cuid())
+  roomId     String
+  bedLabel   String
+  studentId  String?   @unique
+  occupiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  room                 Room              @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  student              Student?          @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  currentRequests      ExchangeRequest[] @relation("CurrentBed")
+  fromSwapParticipants SwapParticipant[] @relation("FromBed")
+  toSwapParticipants   SwapParticipant[] @relation("ToBed")
+
+  @@unique([roomId, bedLabel])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  studentProfile Student?
+  approvals      Approval[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+}
+
+model Student {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  rollNumber        String    @unique
+  year              Int
+  gender            Gender
+  branch            String
+  acEligible        Boolean   @default(false)
+  isRestricted      Boolean   @default(false)
+  swapsThisSemester Int       @default(0)
+  lastSwapAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bed              Bed?
+  exchangeRequests ExchangeRequest[]
+  swapParticipants SwapParticipant[]
+}
+
+model Policy {
+  id                     String    @id @default(cuid())
+  hostelId               String?   @unique
+  name                   String    @default("Default Campus Policy")
+  sameGenderOnly         Boolean   @default(true)
+  sameYearOnly           Boolean   @default(false)
+  allowAcNonAcSwap       Boolean   @default(false)
+  requireAcEligibility   Boolean   @default(true)
+  requireSameBedCount    Boolean   @default(false)
+  maxSwapsPerSemester    Int       @default(2)
+  cooldownDays           Int       @default(14)
+  maxCycleLength         Int       @default(5)
+  acceptanceTimeoutHours Int       @default(48)
+  blockedWindowStart     DateTime?
+  blockedWindowEnd       DateTime?
+  exchangeDeadline       DateTime?
+  updatedBy              String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  hostel Hostel? @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+}
+
+model ExchangeRequest {
+  id                 String          @id @default(cuid())
+  requestCode        String          @unique
+  studentId          String
+  currentRoomId      String
+  currentBedId       String
+  desiredRoomId      String?
+  desiredHostelId    String?
+  desiredBlockId     String?
+  desiredFloor       Int?
+  desiredRoomType    DesiredRoomType @default(ANY)
+  desiredBedCount    Int?
+  reason             String
+  expiresAt          DateTime
+  status             ExchangeStatus  @default(PENDING)
+  lockedCycleId      String?
+  validationSnapshot Json?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  student          Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  currentRoom      Room              @relation("CurrentRoom", fields: [currentRoomId], references: [id])
+  currentBed       Bed               @relation("CurrentBed", fields: [currentBedId], references: [id])
+  desiredRoom      Room?             @relation("DesiredRoom", fields: [desiredRoomId], references: [id])
+  desiredHostel    Hostel?           @relation("DesiredHostel", fields: [desiredHostelId], references: [id])
+  desiredBlock     Block?            @relation("DesiredBlock", fields: [desiredBlockId], references: [id])
+  lockedCycle      SwapGroup?        @relation("LockedCycle", fields: [lockedCycleId], references: [id])
+  swapParticipants SwapParticipant[]
+
+  @@index([status])
+  @@index([studentId, status])
+}
+
+model SwapGroup {
+  id                 String          @id @default(cuid())
+  cycleCode          String          @unique
+  type               SwapType
+  length             Int
+  status             SwapGroupStatus @default(AWAITING_ACCEPTANCE)
+  acceptanceDeadline DateTime
+  dissolveReason     String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  participants   SwapParticipant[]
+  approvals      Approval[]
+  lockedRequests ExchangeRequest[] @relation("LockedCycle")
+
+  @@index([status])
+}
+
+model SwapParticipant {
+  id                String              @id @default(cuid())
+  swapGroupId       String
+  exchangeRequestId String
+  studentId         String
+  fromRoomId        String
+  fromBedId         String
+  toRoomId          String
+  toBedId           String
+  stepOrder         Int
+  decision          ParticipantDecision @default(PENDING)
+  respondedAt       DateTime?
+  remarks           String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  swapGroup       SwapGroup       @relation(fields: [swapGroupId], references: [id], onDelete: Cascade)
+  exchangeRequest ExchangeRequest @relation(fields: [exchangeRequestId], references: [id], onDelete: Cascade)
+  student         Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fromRoom        Room            @relation("FromRoom", fields: [fromRoomId], references: [id])
+  fromBed         Bed             @relation("FromBed", fields: [fromBedId], references: [id])
+  toRoom          Room            @relation("ToRoom", fields: [toRoomId], references: [id])
+  toBed           Bed             @relation("ToBed", fields: [toBedId], references: [id])
+
+  @@unique([swapGroupId, studentId])
+  @@unique([swapGroupId, exchangeRequestId])
+}
+
+model Approval {
+  id          String           @id @default(cuid())
+  swapGroupId String
+  wardenId    String
+  decision    ApprovalDecision
+  remarks     String
+  decidedAt   DateTime         @default(now())
+
+  swapGroup SwapGroup @relation(fields: [swapGroupId], references: [id], onDelete: Cascade)
+  warden    User      @relation(fields: [wardenId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorEmail String
+  actorRole  String
+  action     String
+  entityType String
+  entityId   String
+  oldValue   Json?
+  newValue   Json?
+  remarks    String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id                 String           @id @default(cuid())
+  userId             String
+  title              String
+  message            String
+  type               NotificationType
+  relatedEntityId    String?
+  isRead             Boolean          @default(false)
+  emailStubSent      Boolean          @default(true)
+  emailStubRecipient String
+  createdAt          DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
