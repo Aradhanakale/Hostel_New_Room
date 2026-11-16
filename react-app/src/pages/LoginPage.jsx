@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftRight, KeyRound, Loader2, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
+import { ArrowLeftRight, Eye, EyeOff, KeyRound, Loader2, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 import { getApiErrorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -20,6 +20,7 @@ export function LoginPage() {
     // Login form
     const [email, setEmail] = useState('aarav@hostel.edu');
     const [password, setPassword] = useState('Student@123');
+    const [showPassword, setShowPassword] = useState(false);
     // Register form
     const [name, setName] = useState('');
     const [rollNumber, setRollNumber] = useState('');
@@ -175,10 +176,34 @@ export function LoginPage() {
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@hostel.edu" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold mb-1">Password</label>
-              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
-            </div>
+<div>
+  <label className="block text-xs font-semibold mb-1">Password</label>
+
+  <div className="relative">
+    <input
+      type={showPassword ? 'text' : 'password'}
+      required
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      placeholder="••••••••"
+      className="w-full px-3.5 py-2.5 pr-11 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword((prev) => !prev)}
+      aria-label={showPassword ? 'Hide password' : 'Show password'}
+      aria-pressed={showPassword}
+      className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400"
+    >
+      {showPassword ? (
+        <EyeOff className="w-4 h-4" />
+      ) : (
+        <Eye className="w-4 h-4" />
+      )}
+    </button>
+  </div>
+</div>
 
             {mode === 'register' && (<label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                 <input type="checkbox" checked={acEligible} onChange={(e) => setAcEligible(e.target.checked)} className="rounded text-indigo-600"/>
