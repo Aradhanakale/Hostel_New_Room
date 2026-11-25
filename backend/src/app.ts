@@ -35,6 +35,17 @@ if (env.nodeEnv !== 'test') {
 }
 app.use('/api', apiLimiter);
 
+// Health check endpoints (both /health and /api/health)
+app.get('/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    healthy: true,
+    service: 'hostel-room-exchange-api',
+    port: env.port,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({
     success: true,

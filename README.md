@@ -6,6 +6,25 @@ The workspace is organized as an npm monorepo with a shared Express/PostgreSQL/P
 
 ---
 
+## After pulling: run `./setup.sh` then `npm run dev:all`
+
+Every time you pull or clone the repository on your laptop:
+
+```bash
+# 1. Automated one-step setup (installs deps, prepares .env, starts DB, generates Prisma, syncs schema, seeds data)
+chmod +x setup.sh scripts/*.sh
+./setup.sh
+
+# 2. Start the database, backend (port 4000), and Next.js (port 3000) together
+npm run dev:all
+```
+
+- **Health check**: `http://localhost:4000/health` (returns `{"status":"ok","healthy":true}`)
+- **Next.js App**: `http://localhost:3000`
+- **React App (optional)**: `npm run dev:react` at `http://localhost:5173`
+
+---
+
 ## Architecture
 
 ```

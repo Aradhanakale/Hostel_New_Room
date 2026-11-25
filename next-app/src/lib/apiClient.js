@@ -26,7 +26,19 @@ apiClient.interceptors.response.use((response) => response, (error) => {
 });
 export function getApiErrorMessage(err, fallback = 'Something went wrong') {
     if (axios.isAxiosError(err)) {
-        return err.response?.data?.error?.message || err.message || fallback;
+        if (err.response?.data?.error?.message) {
+            return err.response.data.error.message;
+        }
+        if (err.code === 'ECONNREFUSED' || err.message?.includes('Network Error')) {
+            return 'Backend server is not running on port 4000. Please start it with npm run dev:backend or npm run dev:all.';
+        }
+        if (err.response?.status === 503) {
+            return err.response?.data?.error?.message || 'Backend service is currently unavailable. Ensure the backend is running on port 4000.';
+        }
+        if (err.response?.status === 500) {
+            return 'Internal Server Error (Backend service may be stopped or database unreachable).';
+        }
+        return err.message || fallback;
     }
     if (err instanceof Error)
         return err.message;

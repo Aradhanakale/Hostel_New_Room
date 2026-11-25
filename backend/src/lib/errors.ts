@@ -34,12 +34,13 @@ export function errorHandler(
   }
 
   if (err instanceof ZodError) {
+    const issues = (err as any).issues || (err as any).errors || [];
     res.status(400).json({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
-        message: err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
-        details: err.errors,
+        message: issues.map((e: any) => `${(e.path || []).join('.')}: ${e.message}`).join('; '),
+        details: issues,
       },
     });
     return;

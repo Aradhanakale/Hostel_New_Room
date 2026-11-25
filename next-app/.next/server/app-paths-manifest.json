@@ -1,7 +1,16 @@
 {
-  "/my-room/page": "app/my-room/page.js",
-  "/login/page": "app/login/page.js",
-  "/warden/page": "app/warden/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/admin/page": "app/admin/page.js",
+  "/audit/page": "app/audit/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/exchange/new/page": "app/exchange/new/page.js",
-  "/audit/page": "app/audit/page.js"
+  "/login/page": "app/login/page.js",
+  "/my-requests/page": "app/my-requests/page.js",
+  "/my-room/page": "app/my-room/page.js",
+  "/notifications/page": "app/notifications/page.js",
+  "/page": "app/page.js",
+  "/swap-matches/page": "app/swap-matches/page.js",
+  "/warden/page": "app/warden/page.js"
 }
